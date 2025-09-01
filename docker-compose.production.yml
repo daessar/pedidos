@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pedidos-db
+    environment:
+      POSTGRES_DB: pedidos_hpowerco
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - pedidos-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d pedidos_hpowerco"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  backend:
+    image: ${DOCKER_USERNAME}/pedidos-hpowerco-backend:${IMAGE_TAG:-latest}
+    container_name: pedidos-backend
+    environment:
+      DATABASE_URL: postgresql://admin:${DB_PASSWORD:-admin123}@postgres:5432/pedidos_hpowerco
+      NODE_ENV: production
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pedidos-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/restaurantes"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    image: ${DOCKER_USERNAME}/pedidos-hpowerco-frontend:${IMAGE_TAG:-latest}
+    container_name: pedidos-frontend
+    environment:
+      REACT_APP_API_URL: http://${HOST_IP:-localhost}:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - pedidos-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  pedidos-network:
+    driver: bridge
