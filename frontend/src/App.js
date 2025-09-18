@@ -6,6 +6,7 @@ import { AppBar, Toolbar, Typography, Container } from '@mui/material';
 import NuevoPedido from './pages/NuevoPedido';
 import Historial from './pages/Historial';
 import DetallePedido from './pages/DetallePedido';
+import EditarPedido from './pages/EditarPedido';
 import Configuracion from './pages/Configuracion';
 import Navigation from './components/Navigation';
 
@@ -109,6 +110,7 @@ function App() {
               <Route path="/nuevo-pedido" element={<NuevoPedido />} />
               <Route path="/historial" element={<Historial />} />
               <Route path="/pedido/:id" element={<DetallePedido />} />
+              <Route path="/editar-pedido/:id" element={<EditarPedido />} />
               <Route path="/configuracion" element={<Configuracion darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
             </Routes>
           </Container>

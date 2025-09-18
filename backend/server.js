@@ -254,6 +254,54 @@ app.get('/api/pedidos', async (req, res) => {
   }
 });
 
+app.put('/api/pedidos/:id', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { id } = req.params;
+    const { restaurante_id, usuario_responsable_id, valor_domicilio, items } = req.body;
+
+    // Verificar que el pedido existe
+    const pedidoExistente = await client.query('SELECT * FROM pedidos WHERE id = $1', [id]);
+    if (pedidoExistente.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    const total_pedido = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+    // Actualizar pedido
+    await client.query(
+      'UPDATE pedidos SET restaurante_id = $1, usuario_responsable_id = $2, valor_domicilio = $3, total_pedido = $4 WHERE id = $5',
+      [restaurante_id, usuario_responsable_id, valor_domicilio, total_pedido, id]
+    );
+
+    // Eliminar items existentes
+    await client.query('DELETE FROM pedido_items WHERE pedido_id = $1', [id]);
+
+    // Insertar nuevos items
+    for (const item of items) {
+      await client.query(
+        'INSERT INTO pedido_items (pedido_id, usuario_id, menu_item_id, cantidad, subtotal) VALUES ($1, $2, $3, $4, $5)',
+        [id, item.usuario_id, item.menu_item_id, item.cantidad, item.subtotal]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    const pedidoActualizado = await getPedidoCompleto(id);
+    res.json(pedidoActualizado);
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Error actualizando pedido' });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;

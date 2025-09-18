@@ -27,7 +27,8 @@ export const usuariosAPI = {
 export const pedidosAPI = {
   getAll: () => api.get('/pedidos'),
   getById: (id) => api.get(`/pedidos/${id}`),
-  create: (pedidoData) => api.post('/pedidos', pedidoData)
+  create: (pedidoData) => api.post('/pedidos', pedidoData),
+  update: (id, pedidoData) => api.put(`/pedidos/${id}`, pedidoData)
 };
 
 export const formatCurrency = (amount) => {

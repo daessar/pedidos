@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, CardContent, Typography, Grid, Chip, Button, Box,
-  Paper, Alert, Divider, List, ListItem, ListItemText
+  Paper, Alert, Divider, List, ListItem, ListItemText, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material';
-import { ArrowBack, Receipt, Restaurant, Person, LocalShipping } from '@mui/icons-material';
+import { ArrowBack, Receipt, Restaurant, Person, LocalShipping, Edit } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { pedidosAPI, formatCurrency } from '../services/api';
 
@@ -48,6 +49,24 @@ function DetallePedido() {
     }
   };
 
+  const getResumenItems = () => {
+    if (!pedido || !pedido.items) return [];
+
+    const resumen = {};
+    pedido.items.forEach(item => {
+      if (resumen[item.item_nombre]) {
+        resumen[item.item_nombre] += item.cantidad;
+      } else {
+        resumen[item.item_nombre] = item.cantidad;
+      }
+    });
+
+    return Object.entries(resumen).map(([nombre, cantidad]) => ({
+      nombre,
+      cantidad
+    }));
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
@@ -75,13 +94,21 @@ function DetallePedido() {
 
   return (
     <Box>
-      <Button
-        startIcon={<ArrowBack />}
-        onClick={() => navigate('/historial')}
-        sx={{ mb: 2 }}
-      >
-        Volver al Historial
-      </Button>
+      <Box display="flex" gap={2} sx={{ mb: 2 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/historial')}
+        >
+          Volver al Historial
+        </Button>
+        <Button
+          startIcon={<Edit />}
+          variant="outlined"
+          onClick={() => navigate(`/editar-pedido/${id}`)}
+        >
+          Editar Pedido
+        </Button>
+      </Box>
 
       <Typography variant="h4" gutterBottom>
         <Receipt sx={{ mr: 1 }} />
@@ -267,6 +294,30 @@ function DetallePedido() {
               <Typography variant="body1">
                 {pedido.costos_por_usuario?.length || 0} personas
               </Typography>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="body2" color="textSecondary" gutterBottom>
+                Resumen de Items Pedidos
+              </Typography>
+              <TableContainer component={Paper} sx={{ mt: 1 }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Item</TableCell>
+                      <TableCell align="right">Cantidad</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {getResumenItems().map((item) => (
+                      <TableRow key={item.nombre}>
+                        <TableCell>{item.nombre}</TableCell>
+                        <TableCell align="right">{item.cantidad}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </CardContent>
           </Card>
         </Grid>
