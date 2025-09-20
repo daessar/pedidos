@@ -61,10 +61,25 @@ function DetallePedido() {
       }
     });
 
-    return Object.entries(resumen).map(([nombre, cantidad]) => ({
-      nombre,
-      cantidad
-    }));
+    return Object.entries(resumen)
+      .sort(([, a], [, b]) => b - a)
+      .map(([nombre, cantidad]) => ({
+        nombre,
+        cantidad
+      }));
+  };
+
+  const getGroupedItems = (items) => {
+    const grouped = {};
+    items.forEach(item => {
+      if (grouped[item.item_nombre]) {
+        grouped[item.item_nombre].cantidad += item.cantidad;
+        grouped[item.item_nombre].subtotal += item.subtotal;
+      } else {
+        grouped[item.item_nombre] = { ...item };
+      }
+    });
+    return Object.values(grouped);
   };
 
   if (loading) {
@@ -202,17 +217,17 @@ function DetallePedido() {
               </Typography>
               
               {pedido.costos_por_usuario?.map((usuario, index) => (
-                <Paper key={usuario.usuario_id} elevation={1} sx={{ p: 2, mb: 2 }}>
-                  <Typography variant="subtitle1" fontWeight={500} color="primary" gutterBottom>
+                <Paper key={usuario.usuario_id} elevation={1} sx={{ p: 1, mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={500} color="primary" gutterBottom>
                     {usuario.usuario_nombre}
                   </Typography>
-                  
-                  <List dense sx={{ mb: 2 }}>
-                    {usuario.items.map(item => (
-                      <ListItem key={item.id} sx={{ px: 0 }}>
+
+                  <List dense sx={{ mb: 1, py: 0 }}>
+                    {getGroupedItems(usuario.items).map(item => (
+                      <ListItem key={item.item_nombre} sx={{ px: 0, py: 0.5, minHeight: 32 }}>
                         <ListItemText
                           primary={
-                            <Box display="flex" justifyContent="space-between">
+                            <Box display="flex" justifyContent="space-between" alignItems="center">
                               <Typography variant="body2">
                                 {item.item_nombre} x{item.cantidad}
                               </Typography>
@@ -221,29 +236,26 @@ function DetallePedido() {
                               </Typography>
                             </Box>
                           }
-                          secondary={`Precio unitario: ${formatCurrency(item.precio_unitario)}`}
                         />
                       </ListItem>
                     ))}
                   </List>
-                  
+
                   <Divider sx={{ my: 1 }} />
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
+
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box>
                       <Typography variant="body2">
                         Subtotal: {formatCurrency(usuario.subtotal)}
                       </Typography>
                       <Typography variant="body2">
                         Domicilio: {formatCurrency(usuario.costo_domicilio)}
                       </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle1" fontWeight={600} color="primary" align="right">
-                        Total a pagar: {formatCurrency(usuario.total)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                    </Box>
+                    <Typography variant="body2" fontWeight={600} color="primary">
+                      Total: {formatCurrency(usuario.total)}
+                    </Typography>
+                  </Box>
                 </Paper>
               ))}
             </CardContent>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Box } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
-import { Add, History, Settings } from '@mui/icons-material';
+import { Add, History, BarChart, Settings } from '@mui/icons-material';
 
 function Navigation() {
   const location = useLocation();
@@ -29,6 +29,15 @@ function Navigation() {
         sx={getButtonStyle('/historial')}
       >
         Historial
+      </Button>
+      <Button
+        component={Link}
+        to="/metricas"
+        variant={location.pathname === '/metricas' ? 'contained' : 'text'}
+        startIcon={<BarChart />}
+        sx={getButtonStyle('/metricas')}
+      >
+        Métricas
       </Button>
       <Button
         component={Link}

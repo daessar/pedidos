@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { AppBar, Toolbar, Typography, Container } from '@mui/material';
 import NuevoPedido from './pages/NuevoPedido';
 import Historial from './pages/Historial';
+import Metricas from './pages/Metricas';
 import DetallePedido from './pages/DetallePedido';
 import EditarPedido from './pages/EditarPedido';
 import Configuracion from './pages/Configuracion';
@@ -56,7 +57,7 @@ function App() {
       MuiCard: {
         styleOverrides: {
           root: {
-            boxShadow: darkMode 
+            boxShadow: darkMode
               ? '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)'
               : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
             borderRadius: 12,
@@ -87,6 +88,34 @@ function App() {
           },
         },
       },
+      MuiTableCell: {
+        styleOverrides: {
+          root: {
+            color: darkMode ? 'white' : 'inherit',
+            borderBottom: `1px solid ${darkMode ? '#333' : '#e5e7eb'}`,
+          },
+          head: {
+            backgroundColor: darkMode ? '#2a2a2a' : '#f8fafc',
+            color: darkMode ? 'white' : 'inherit',
+            fontWeight: 600,
+          },
+        },
+      },
+      MuiTableContainer: {
+        styleOverrides: {
+          root: {
+            backgroundColor: darkMode ? '#1e1e1e' : 'white',
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundColor: darkMode ? '#1e1e1e' : 'white',
+            color: darkMode ? 'white' : 'inherit',
+          },
+        },
+      },
     },
   });
 
@@ -109,6 +138,7 @@ function App() {
               <Route path="/" element={<NuevoPedido />} />
               <Route path="/nuevo-pedido" element={<NuevoPedido />} />
               <Route path="/historial" element={<Historial />} />
+              <Route path="/metricas" element={<Metricas />} />
               <Route path="/pedido/:id" element={<DetallePedido />} />
               <Route path="/editar-pedido/:id" element={<EditarPedido />} />
               <Route path="/configuracion" element={<Configuracion darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />

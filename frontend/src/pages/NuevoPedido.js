@@ -15,6 +15,9 @@ function NuevoPedido() {
   const [responsable, setResponsable] = useState('');
   const [valorDomicilio, setValorDomicilio] = useState('');
   const [carrito, setCarrito] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState({});
+  const [quantities, setQuantities] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -50,17 +53,25 @@ function NuevoPedido() {
   };
 
   const agregarAlCarrito = (menuItem, usuario, cantidad = 1) => {
-    const nuevoItem = {
-      id: Date.now(),
-      menu_item_id: menuItem.id,
-      usuario_id: usuario.id,
-      usuario_nombre: usuario.nombre,
-      item_nombre: menuItem.nombre,
-      precio_unitario: menuItem.precio,
-      cantidad,
-      subtotal: menuItem.precio * cantidad
-    };
-    setCarrito([...carrito, nuevoItem]);
+    const existingIndex = carrito.findIndex(ci => ci.menu_item_id === menuItem.id && ci.usuario_id === usuario.id);
+    if (existingIndex !== -1) {
+      const existingItem = carrito[existingIndex];
+      existingItem.cantidad += cantidad;
+      existingItem.subtotal = existingItem.cantidad * existingItem.precio_unitario;
+      setCarrito([...carrito]);
+    } else {
+      const nuevoItem = {
+        id: Date.now() + Math.random(),
+        menu_item_id: menuItem.id,
+        usuario_id: usuario.id,
+        usuario_nombre: usuario.nombre,
+        item_nombre: menuItem.nombre,
+        precio_unitario: menuItem.precio,
+        cantidad,
+        subtotal: menuItem.precio * cantidad
+      };
+      setCarrito([...carrito, nuevoItem]);
+    }
   };
 
   const eliminarDelCarrito = (itemId) => {
@@ -104,6 +115,19 @@ function NuevoPedido() {
   };
 
   const totalCarrito = carrito.reduce((sum, item) => sum + item.subtotal, 0);
+
+  const getGroupedItems = (items) => {
+    const grouped = {};
+    items.forEach(item => {
+      if (grouped[item.item_nombre]) {
+        grouped[item.item_nombre].cantidad += item.cantidad;
+        grouped[item.item_nombre].subtotal += item.subtotal;
+      } else {
+        grouped[item.item_nombre] = { ...item };
+      }
+    });
+    return Object.values(grouped);
+  };
 
   return (
     <Box>
@@ -173,9 +197,19 @@ function NuevoPedido() {
                 <Typography variant="h6" gutterBottom>
                   Menú - {restaurantes.find(r => r.id == selectedRestaurante)?.nombre}
                 </Typography>
-                
+
+                <TextField
+                  fullWidth
+                  label="Buscar items del menú"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+
                 <Grid container spacing={2}>
-                  {menu.map(item => (
+                  {menu
+                    .filter(item => item.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map(item => (
                     <Grid item xs={12} sm={6} md={4} key={item.id}>
                       <Paper elevation={1} sx={{ p: 2 }}>
                         <Typography variant="subtitle1" fontWeight={500}>
@@ -184,33 +218,41 @@ function NuevoPedido() {
                         <Typography variant="h6" color="primary" gutterBottom>
                           {formatCurrency(item.precio)}
                         </Typography>
-                        
+
                         <FormControl fullWidth size="small" sx={{ mb: 1 }}>
                           <InputLabel>Usuario</InputLabel>
                           <Select
-                            defaultValue=""
+                            value={selectedUsers[item.id] || ''}
                             label="Usuario"
-                            onChange={(e) => {
-                              const usuario = usuarios.find(u => u.id == e.target.value);
-                              if (usuario) {
-                                agregarAlCarrito(item, usuario);
-                                e.target.value = '';
-                              }
-                            }}
+                            onChange={(e) => setSelectedUsers(prev => ({ ...prev, [item.id]: e.target.value }))}
                           >
                             {usuarios.map(user => (
                               <MenuItem key={user.id} value={user.id}>{user.nombre}</MenuItem>
                             ))}
                           </Select>
                         </FormControl>
-                        
+
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Cantidad"
+                          type="number"
+                          value={quantities[item.id] || 1}
+                          onChange={(e) => setQuantities(prev => ({ ...prev, [item.id]: parseInt(e.target.value) || 1 }))}
+                          inputProps={{ min: 1 }}
+                          sx={{ mb: 1 }}
+                        />
+
                         <Button
                           fullWidth
                           variant="outlined"
                           startIcon={<Add />}
                           onClick={() => {
-                            const usuario = usuarios[0];
-                            if (usuario) agregarAlCarrito(item, usuario);
+                            const selectedUserId = selectedUsers[item.id];
+                            if (selectedUserId) {
+                              const usuario = usuarios.find(u => u.id == selectedUserId);
+                              if (usuario) agregarAlCarrito(item, usuario, quantities[item.id] || 1);
+                            }
                           }}
                         >
                           Agregar
@@ -310,13 +352,13 @@ function NuevoPedido() {
                   <Typography variant="subtitle1" fontWeight={500}>
                     {usuario.usuario_nombre}
                   </Typography>
-                  
-                  {usuario.items.map(item => (
-                    <Typography key={item.id} variant="body2" sx={{ ml: 2 }}>
+
+                  {getGroupedItems(usuario.items).map(item => (
+                    <Typography key={item.item_nombre} variant="body2" sx={{ ml: 2 }}>
                       • {item.item_nombre} x{item.cantidad} - {formatCurrency(item.subtotal)}
                     </Typography>
                   ))}
-                  
+
                   <Box sx={{ mt: 1, ml: 2 }}>
                     <Typography variant="body2">
                       Subtotal: {formatCurrency(usuario.subtotal)}
